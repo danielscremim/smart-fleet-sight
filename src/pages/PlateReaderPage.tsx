@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,6 +6,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Camera, Upload, RefreshCw, Check } from "lucide-react";
 import { useTrucks } from "@/contexts/TruckContext";
 import { toast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function PlateReaderPage() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -40,7 +40,7 @@ export default function PlateReaderPage() {
     }
   };
   
-  const processImage = () => {
+  const processImage = async () => {
     if (!selectedImage) {
       setError("Nenhuma imagem selecionada para processamento.");
       return;
@@ -49,24 +49,30 @@ export default function PlateReaderPage() {
     setIsProcessing(true);
     setError(null);
     
-    // Simulate ANPR processing delay
-    setTimeout(() => {
-      // Generate a random plate (in a real app, this would be the result of OCR)
-      const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-      const randomLetter = () => letters.charAt(Math.floor(Math.random() * letters.length));
-      const randomNumber = () => Math.floor(Math.random() * 10).toString();
+    try {
+      const { data, error } = await supabase.functions.invoke('process-plate', {
+        body: { image: selectedImage }
+      });
+
+      if (error) throw error;
       
-      // Generate Brazilian style plate (AAA0A00 or AAA0000)
-      const plate = `${randomLetter()}${randomLetter()}${randomLetter()}${randomNumber()}${Math.random() > 0.5 ? randomLetter() : randomNumber()}${randomNumber()}${randomNumber()}`;
-      
-      // Random confidence between 70% and 99%
-      const randConfidence = Math.floor(Math.random() * 30) + 70;
-      
-      setPlateText(plate);
-      setConfidence(randConfidence);
-      setIsProcessed(true);
+      if (data.plate) {
+        setPlateText(data.plate);
+        setConfidence(data.confidence * 100);
+        setIsProcessed(true);
+      } else {
+        throw new Error('Não foi possível ler a placa na imagem');
+      }
+    } catch (err) {
+      setError(err.message || 'Erro ao processar a imagem');
+      toast({
+        variant: "destructive",
+        title: "Erro no processamento",
+        description: err.message || 'Erro ao processar a imagem'
+      });
+    } finally {
       setIsProcessing(false);
-    }, 1500);
+    }
   };
   
   const handleRegisterPlate = () => {
