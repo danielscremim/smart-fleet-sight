@@ -1,20 +1,10 @@
-
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { 
-  BarChart3, 
-  TrendingUp, 
-  Clock, 
-  ShieldCheck, 
-  DollarSign,
-  ArrowRight
-} from "lucide-react";
-
+import { BarChart3, TrendingUp, Clock, ShieldCheck, DollarSign, ArrowRight } from "lucide-react";
 export default function HomePage() {
-  return (
-    <div className="space-y-8 animate-fade-in">
+  return <div className="space-y-8 animate-fade-in">
       {/* Hero Section */}
       <section className="bg-anpr-blue text-white rounded-lg overflow-hidden shadow-lg">
         <div className="bg-[url('https://images.unsplash.com/photo-1563291074-2bf8677ac0e5?ixlib=rb-4.0.3&auto=format&fit=crop&q=80')] bg-cover bg-center bg-opacity-50 bg-blend-overlay">
@@ -33,7 +23,7 @@ export default function HomePage() {
                 </Button>
               </Link>
               <Link to="/plate-reader">
-                <Button variant="outline" className="border-white text-white hover:bg-white/10">
+                <Button variant="outline" className="border-white text-white bg-slate-800 hover:bg-slate-700">
                   Testar Leitor ANPR
                 </Button>
               </Link>
@@ -135,7 +125,9 @@ export default function HomePage() {
           <div className="mt-8">
             <h3 className="text-lg font-medium mb-3">Retorno sobre Investimento</h3>
             <div className="bg-gray-100 h-3 rounded-full w-full">
-              <div className="bg-anpr-blue h-3 rounded-full" style={{ width: '78%' }}></div>
+              <div className="bg-anpr-blue h-3 rounded-full" style={{
+              width: '78%'
+            }}></div>
             </div>
             <div className="flex justify-between mt-2 text-sm text-gray-600">
               <span>Investimento Inicial</span>
@@ -192,11 +184,7 @@ export default function HomePage() {
               </ul>
             </div>
             <div className="bg-anpr-lightGray flex items-center justify-center p-6">
-              <img 
-                src="https://images.unsplash.com/photo-1605789538467-f715d58e03f9?ixlib=rb-4.0.3&auto=format&fit=crop&q=80" 
-                alt="Câmera ANPR em funcionamento" 
-                className="rounded-lg shadow-md max-h-64 object-cover"
-              />
+              <img src="https://images.unsplash.com/photo-1605789538467-f715d58e03f9?ixlib=rb-4.0.3&auto=format&fit=crop&q=80" alt="Câmera ANPR em funcionamento" className="rounded-lg shadow-md max-h-64 object-cover" />
             </div>
           </div>
         </Card>
@@ -221,6 +209,5 @@ export default function HomePage() {
           </Link>
         </div>
       </section>
-    </div>
-  );
+    </div>;
 }
