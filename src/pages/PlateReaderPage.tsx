@@ -4,6 +4,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Camera } from "lucide-react";
 import { ImageUpload } from "@/components/plate-reader/ImageUpload";
 import { PlateResult } from "@/components/plate-reader/PlateResult";
+import { PageHeader } from "@/components/plate-reader/PageHeader";
+import { PlateInstructions } from "@/components/plate-reader/PlateInstructions";
 import { usePlateReader } from "@/hooks/use-plate-reader";
 
 export default function PlateReaderPage() {
@@ -22,10 +24,7 @@ export default function PlateReaderPage() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-8 animate-fade-in">
-      <div>
-        <h1 className="text-3xl font-bold">Teste de Leitura de Placa</h1>
-        <p className="text-gray-500 mt-2">Faça upload da imagem de uma placa para testar o sistema ANPR</p>
-      </div>
+      <PageHeader />
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* Image upload section */}
@@ -69,21 +68,7 @@ export default function PlateReaderPage() {
         </Card>
       </div>
       
-      {/* Instructions */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Como utilizar o leitor ANPR</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ol className="list-decimal list-inside space-y-3 text-gray-600">
-            <li>Faça upload da foto de uma placa de caminhão (formatos aceitos: JPG, PNG).</li>
-            <li>Clique em "Processar Imagem" para iniciar o reconhecimento automático.</li>
-            <li>Verifique o resultado da leitura e o nível de confiança.</li>
-            <li>Se necessário, clique em "Reprocessar" para tentar novamente.</li>
-            <li>Quando o resultado estiver correto, clique em "Registrar" para adicionar ao sistema.</li>
-          </ol>
-        </CardContent>
-      </Card>
+      <PlateInstructions />
     </div>
   );
 }
