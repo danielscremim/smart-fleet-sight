@@ -1,19 +1,18 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createWorker } from "https://esm.sh/tesseract.js@5.0.5"
-import { getThreshold } from "https://esm.sh/tesseract.js-utils@1.0.0"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// Função para limpar o texto e extrair o padrão da placa
+// Function to extract license plate from text
 function extractLicensePlate(text) {
-  // Primeiro limpa o texto removendo espaços e quebras de linha
+  // Clean the text by removing spaces and line breaks
   const cleanText = text.replace(/\s+/g, '');
   
-  // Padrão Mercosul: 3 letras, 1 número, 1 letra, 2 números (ABC1D23)
+  // Mercosul pattern: 3 letters, 1 number, 1 letter, 2 numbers (ABC1D23)
   const mercosulPattern = /[A-Z]{3}[0-9][A-Z][0-9]{2}/;
   const mercosulMatch = cleanText.match(mercosulPattern);
   
@@ -25,7 +24,7 @@ function extractLicensePlate(text) {
     };
   }
   
-  // Padrão antigo: 3 letras, 4 números (ABC1234)
+  // Old pattern: 3 letters, 4 numbers (ABC1234)
   const oldPattern = /[A-Z]{3}[0-9]{4}/;
   const oldMatch = cleanText.match(oldPattern);
   
@@ -37,7 +36,7 @@ function extractLicensePlate(text) {
     };
   }
   
-  // Se nenhum padrão for encontrado, retorna o texto limpo
+  // If no pattern is found, return the cleaned text
   return {
     plate: cleanText.substring(0, 7).toUpperCase(),
     format: 'unknown',
@@ -45,20 +44,20 @@ function extractLicensePlate(text) {
   };
 }
 
-// Função para pré-processar a imagem antes do OCR
+// Function to preprocess the image before OCR
+// Since we can't use tesseract.js-utils, we'll implement a simpler version
 async function preprocessImage(imageBase64) {
   try {
-    // Remover o cabeçalho do data URL se existir
+    // Remove the data URL header if it exists
     const base64Data = imageBase64.replace(/^data:image\/(png|jpeg|jpg);base64,/, '');
-    const binaryData = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
     
-    // Criar uma resposta com a imagem processada
+    // Return the processed image data
     return {
       success: true,
       image: base64Data
     };
   } catch (error) {
-    console.error("Erro no pré-processamento da imagem:", error);
+    console.error("Error in image preprocessing:", error);
     return {
       success: false,
       error: error.message
@@ -67,7 +66,7 @@ async function preprocessImage(imageBase64) {
 }
 
 serve(async (req) => {
-  // Lidar com requisições CORS preflight
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
@@ -75,42 +74,42 @@ serve(async (req) => {
   try {
     const { image } = await req.json()
     if (!image) {
-      throw new Error('Nenhuma imagem fornecida')
+      throw new Error('No image provided')
     }
     
-    console.log("Iniciando processamento de imagem para leitura de placa")
+    console.log("Starting image processing for license plate reading")
     
-    // Pré-processar a imagem
+    // Preprocess the image
     const processedImage = await preprocessImage(image)
     if (!processedImage.success) {
-      throw new Error(`Falha no pré-processamento da imagem: ${processedImage.error}`)
+      throw new Error(`Image preprocessing failed: ${processedImage.error}`)
     }
     
-    // Configurar o worker do Tesseract OCR
+    // Configure the Tesseract OCR worker
     const worker = await createWorker({
       logger: progress => console.log(progress),
     });
     
-    // Carregar e configurar o worker para reconhecimento de caracteres
+    // Load and configure the worker for character recognition
     await worker.loadLanguage('eng');
     await worker.initialize('eng');
-    // Configurações otimizadas para placas de veículos
+    // Optimized settings for license plates
     await worker.setParameters({
       tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',
-      tessedit_pageseg_mode: '7', // Tratando a imagem como uma única linha de texto
+      tessedit_pageseg_mode: '7', // Treating the image as a single line of text
     });
     
-    console.log("OCR configurado, iniciando reconhecimento de texto")
+    console.log("OCR configured, starting text recognition")
     
-    // Reconhecer texto na imagem
+    // Recognize text in the image
     const result = await worker.recognize(image);
-    console.log("Texto reconhecido:", result.data.text);
+    console.log("Recognized text:", result.data.text);
     
-    // Extrair placa do texto reconhecido
+    // Extract license plate from recognized text
     const plateInfo = extractLicensePlate(result.data.text);
-    console.log("Informações da placa extraídas:", plateInfo);
+    console.log("Extracted license plate information:", plateInfo);
     
-    // Liberar recursos do worker
+    // Release worker resources
     await worker.terminate();
     
     return new Response(
@@ -124,7 +123,7 @@ serve(async (req) => {
       },
     )
   } catch (error) {
-    console.error('Erro ao processar placa:', error)
+    console.error('Error processing license plate:', error)
     return new Response(
       JSON.stringify({ error: error.message }),
       {
