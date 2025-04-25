@@ -7,6 +7,7 @@ import { PlateResult } from "@/components/plate-reader/PlateResult";
 import { PageHeader } from "@/components/plate-reader/PageHeader";
 import { PlateInstructions } from "@/components/plate-reader/PlateInstructions";
 import { usePlateReader } from "@/hooks/use-plate-reader";
+import { toast } from "@/components/ui/use-toast";
 
 export default function PlateReaderPage() {
   const {
@@ -16,11 +17,26 @@ export default function PlateReaderPage() {
     plateText,
     confidence,
     error,
+    isManualEntryMode,
     handleImageChange,
     processImage,
     handleRegisterPlate,
-    resetState
+    resetState,
+    setPlateText,
+    setIsManualEntryMode
   } = usePlateReader();
+  
+  const handleManualEntry = () => {
+    setIsManualEntryMode(true);
+    toast({
+      title: "Modo de entrada manual ativado",
+      description: "Digite a placa do veículo manualmente."
+    });
+  };
+  
+  const handlePlateTextChange = (text: string) => {
+    setPlateText(text);
+  };
 
   return (
     <div className="max-w-4xl mx-auto space-y-8 animate-fade-in">
@@ -62,8 +78,10 @@ export default function PlateReaderPage() {
             isProcessed={isProcessed}
             plateText={plateText}
             confidence={confidence}
-            onReprocess={processImage}
+            isManualEntryMode={isManualEntryMode}
+            onReprocess={isManualEntryMode ? handleManualEntry : processImage}
             onRegister={handleRegisterPlate}
+            onPlateTextChange={handlePlateTextChange}
           />
         </Card>
       </div>

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Truck } from "lucide-react";
+import { useNavigate } from 'react-router-dom';
 
 type LoginFormProps = {
   onSwitchToRegister: () => void;
@@ -17,6 +18,7 @@ export function LoginForm({ onSwitchToRegister, onSwitchToForgotPassword }: Logi
   const [errors, setErrors] = useState<{email?: string; password?: string}>({});
   
   const { login, isLoading } = useAuth();
+  const navigate = useNavigate(); // Adicionar esta linha
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,6 +39,7 @@ export function LoginForm({ onSwitchToRegister, onSwitchToForgotPassword }: Logi
     // Submit
     try {
       await login(email, password);
+      navigate('/'); // Adicionar esta linha para redirecionar após login bem-sucedido
     } catch (error) {
       // Error handling is done in the AuthContext
     }

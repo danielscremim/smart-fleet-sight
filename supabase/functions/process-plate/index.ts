@@ -1,69 +1,13 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createWorker } from "https://esm.sh/tesseract.js@5.0.5"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// Function to extract license plate from text
-function extractLicensePlate(text) {
-  // Clean the text by removing spaces and line breaks
-  const cleanText = text.replace(/\s+/g, '');
-  
-  // Mercosul pattern: 3 letters, 1 number, 1 letter, 2 numbers (ABC1D23)
-  const mercosulPattern = /[A-Z]{3}[0-9][A-Z][0-9]{2}/;
-  const mercosulMatch = cleanText.match(mercosulPattern);
-  
-  if (mercosulMatch) {
-    return {
-      plate: mercosulMatch[0],
-      format: 'mercosul',
-      confidence: 0.95
-    };
-  }
-  
-  // Old pattern: 3 letters, 4 numbers (ABC1234)
-  const oldPattern = /[A-Z]{3}[0-9]{4}/;
-  const oldMatch = cleanText.match(oldPattern);
-  
-  if (oldMatch) {
-    return {
-      plate: oldMatch[0],
-      format: 'old',
-      confidence: 0.92
-    };
-  }
-  
-  // If no pattern is found, return the cleaned text
-  return {
-    plate: cleanText.substring(0, 7).toUpperCase(),
-    format: 'unknown',
-    confidence: 0.7
-  };
-}
-
-// Function to preprocess the image before OCR
-// Since we can't use tesseract.js-utils, we'll implement a simpler version
-async function preprocessImage(imageBase64) {
-  try {
-    // Remove the data URL header if it exists
-    const base64Data = imageBase64.replace(/^data:image\/(png|jpeg|jpg);base64,/, '');
-    
-    // Return the processed image data
-    return {
-      success: true,
-      image: base64Data
-    };
-  } catch (error) {
-    console.error("Error in image preprocessing:", error);
-    return {
-      success: false,
-      error: error.message
-    };
-  }
-}
+// Token da API Plate Recognizer
+const API_KEY = "eb9967a6b9156d96bf06dbc8328bcc50db70fb06";
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -72,64 +16,115 @@ serve(async (req) => {
   }
 
   try {
-    const { image } = await req.json()
+    console.log("Recebendo requisição para processamento de placa");
+    
+    // Verificar o conteúdo da requisição
+    const contentType = req.headers.get('content-type');
+    console.log(`Content-Type: ${contentType}`);
+    
+    let requestData;
+    try {
+      requestData = await req.json();
+      console.log("Dados da requisição recebidos com sucesso");
+    } catch (e) {
+      console.error("Erro ao analisar JSON da requisição:", e);
+      throw new Error(`Erro ao analisar JSON da requisição: ${e.message}`);
+    }
+    
+    const { image } = requestData;
     if (!image) {
-      throw new Error('No image provided')
+      console.error("Nenhuma imagem fornecida na requisição");
+      throw new Error('Nenhuma imagem fornecida na requisição');
     }
     
-    console.log("Starting image processing for license plate reading")
+    console.log("Preparando imagem para envio à API Plate Recognizer");
     
-    // Preprocess the image
-    const processedImage = await preprocessImage(image)
-    if (!processedImage.success) {
-      throw new Error(`Image preprocessing failed: ${processedImage.error}`)
+    // Extrair a parte base64 da string da imagem
+    const base64Data = image.replace(/^data:image\/(png|jpeg|jpg);base64,/, '');
+    
+    // Converter base64 para Uint8Array (binário)
+    const binaryData = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
+    
+    try {
+      console.log("Criando FormData para envio à API");
+      
+      // Criar um objeto FormData
+      const formData = new FormData();
+      
+      // Criar um blob a partir dos dados binários
+      const blob = new Blob([binaryData], { type: 'image/jpeg' });
+      
+      // Adicionar a imagem ao FormData
+      formData.append('upload', blob, 'plate.jpg');
+      
+      // Adicionar a região ao FormData
+      formData.append('regions', 'br');
+      
+      console.log("Enviando requisição para API Plate Recognizer");
+      
+      // Chamar a API Plate Recognizer para reconhecimento de placa
+      const response = await fetch('https://api.platerecognizer.com/v1/plate-reader/', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Token ${API_KEY}`
+          // Não definimos Content-Type aqui, pois o navegador define automaticamente com o boundary correto
+        },
+        body: formData
+      });
+      
+      console.log("Status da resposta da API:", response.status);
+      
+      const data = await response.json();
+      console.log("Resposta da API recebida:", JSON.stringify(data));
+      
+      if (!response.ok) {
+        console.error("Erro na API Plate Recognizer:", data);
+        throw new Error(`Erro na API: ${data.error || response.statusText}`);
+      }
+      
+      console.log("Processando resultados da API");
+      
+      if (data.results && data.results.length > 0) {
+        const result = data.results[0];
+        console.log("Placa detectada:", result.plate);
+        
+        return new Response(
+          JSON.stringify({
+            plate: result.plate,
+            confidence: result.score,
+            format: result.region.code === 'br' ? 'mercosul' : 'other'
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      } else {
+        console.log("Nenhuma placa detectada na imagem");
+        
+        return new Response(
+          JSON.stringify({
+            error: 'Nenhuma placa detectada na imagem'
+          }),
+          { 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 404
+          }
+        );
+      }
+    } catch (apiError) {
+      console.error("Erro na comunicação com a API:", apiError);
+      throw new Error(`Erro na comunicação com a API Plate Recognizer: ${apiError.message}`);
     }
-    
-    // Configure the Tesseract OCR worker
-    const worker = await createWorker({
-      logger: progress => console.log(progress),
-    });
-    
-    // Load and configure the worker for character recognition
-    await worker.loadLanguage('eng');
-    await worker.initialize('eng');
-    // Optimized settings for license plates
-    await worker.setParameters({
-      tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',
-      tessedit_pageseg_mode: '7', // Treating the image as a single line of text
-    });
-    
-    console.log("OCR configured, starting text recognition")
-    
-    // Recognize text in the image
-    const result = await worker.recognize(image);
-    console.log("Recognized text:", result.data.text);
-    
-    // Extract license plate from recognized text
-    const plateInfo = extractLicensePlate(result.data.text);
-    console.log("Extracted license plate information:", plateInfo);
-    
-    // Release worker resources
-    await worker.terminate();
+  } catch (error) {
+    console.error('Erro ao processar placa:', error);
     
     return new Response(
-      JSON.stringify({
-        plate: plateInfo.plate,
-        confidence: plateInfo.confidence,
-        format: plateInfo.format
+      JSON.stringify({ 
+        error: error.message,
+        details: 'Erro ao processar a imagem da placa'
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      },
-    )
-  } catch (error) {
-    console.error('Error processing license plate:', error)
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500,
-      },
-    )
+      }
+    );
   }
 })

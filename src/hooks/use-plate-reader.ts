@@ -12,6 +12,7 @@ export const usePlateReader = () => {
   const [plateText, setPlateText] = useState<string>("");
   const [confidence, setConfidence] = useState<number>(0);
   const [error, setError] = useState<string | null>(null);
+  const [isManualEntryMode, setIsManualEntryMode] = useState(false);
   
   const { addTruck } = useTrucks();
 
@@ -47,15 +48,24 @@ export const usePlateReader = () => {
     
     try {
       console.log("Enviando imagem para processamento...");
+      
       const { data, error } = await supabase.functions.invoke('process-plate', {
-        body: { image: selectedImage }
+        body: { image: selectedImage },
+        options: {
+          timeout: 30000 // Aumentar timeout para 30 segundos
+        }
       });
-
-      if (error) throw error;
+  
+      if (error) {
+        console.error("Erro retornado pelo Supabase:", error);
+        setError("Não foi possível processar a placa automaticamente. Por favor, insira manualmente.");
+        setIsManualEntryMode(true);
+        return;
+      }
       
       console.log("Resposta recebida:", data);
       
-      if (data.plate) {
+      if (data && data.plate) {
         setPlateText(data.plate);
         setConfidence(data.confidence * 100);
         setIsProcessed(true);
@@ -64,16 +74,34 @@ export const usePlateReader = () => {
           title: "Placa identificada",
           description: `A placa ${data.plate} foi identificada com ${Math.round(data.confidence * 100)}% de confiança.`
         });
+      } else if (data && data.error) {
+        setError(data.error);
+        setIsManualEntryMode(true);
+        
+        toast({
+          variant: "destructive",
+          title: "Erro no reconhecimento",
+          description: data.error
+        });
       } else {
-        throw new Error('Não foi possível ler a placa na imagem');
+        setError('Não foi possível ler a placa na imagem ou resposta inválida');
+        setIsManualEntryMode(true);
+        
+        toast({
+          variant: "destructive",
+          title: "Placa não detectada",
+          description: "Não foi possível identificar uma placa na imagem. Por favor, insira manualmente."
+        });
       }
-    } catch (err: any) {
-      console.error("Erro no processamento:", err);
+    } catch (err) {
+      console.error("Erro detalhado no processamento:", err);
       setError(err.message || 'Erro ao processar a imagem');
+      setIsManualEntryMode(true);
+      
       toast({
         variant: "destructive",
         title: "Erro no processamento",
-        description: err.message || 'Erro ao processar a imagem'
+        description: "Não foi possível processar a placa automaticamente. Por favor, insira manualmente."
       });
     } finally {
       setIsProcessing(false);
@@ -98,6 +126,7 @@ export const usePlateReader = () => {
     setIsProcessed(false);
     setPlateText("");
     setConfidence(0);
+    setIsManualEntryMode(false);
   };
 
   return {
@@ -108,9 +137,12 @@ export const usePlateReader = () => {
     plateText,
     confidence,
     error,
+    isManualEntryMode,
     handleImageChange,
     processImage,
     handleRegisterPlate,
-    resetState
+    resetState,
+    setPlateText,
+    setIsManualEntryMode
   };
 };
