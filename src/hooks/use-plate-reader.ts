@@ -46,20 +46,29 @@ export const usePlateReader = () => {
     setError(null);
     
     try {
+      console.log("Enviando imagem para processamento...");
       const { data, error } = await supabase.functions.invoke('process-plate', {
         body: { image: selectedImage }
       });
 
       if (error) throw error;
       
+      console.log("Resposta recebida:", data);
+      
       if (data.plate) {
         setPlateText(data.plate);
         setConfidence(data.confidence * 100);
         setIsProcessed(true);
+        
+        toast({
+          title: "Placa identificada",
+          description: `A placa ${data.plate} foi identificada com ${Math.round(data.confidence * 100)}% de confiança.`
+        });
       } else {
         throw new Error('Não foi possível ler a placa na imagem');
       }
-    } catch (err) {
+    } catch (err: any) {
+      console.error("Erro no processamento:", err);
       setError(err.message || 'Erro ao processar a imagem');
       toast({
         variant: "destructive",

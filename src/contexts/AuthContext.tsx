@@ -1,6 +1,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 type User = {
   id: string;
@@ -25,27 +26,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
+  // Lista de usuários registrados (para simulação - seria substituído pelo banco de dados em produção)
+  const [registeredUsers, setRegisteredUsers] = useState<{[email: string]: {name: string, password: string}}>(() => {
+    const savedUsers = localStorage.getItem("registeredUsers");
+    return savedUsers ? JSON.parse(savedUsers) : {
+      "admin@smartcity.com": { name: "Admin User", password: "password" }
+    };
+  });
+
   useEffect(() => {
-    // Check if user is stored in localStorage
+    // Verificar se o usuário está armazenado no localStorage
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
       setUser(JSON.parse(storedUser));
     }
     setIsLoading(false);
-  }, []);
+    
+    // Salvar usuários registrados no localStorage
+    localStorage.setItem("registeredUsers", JSON.stringify(registeredUsers));
+  }, [registeredUsers]);
 
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      // Simulate API call delay
+      // Simular atraso de API
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // For demo purposes, check if credentials match any predefined users
-      if (email === "admin@smartcity.com" && password === "password") {
+      // Verificar se as credenciais correspondem a algum usuário registrado
+      if (registeredUsers[email] && registeredUsers[email].password === password) {
         const userData = {
-          id: "1",
-          name: "Admin User",
-          email: "admin@smartcity.com"
+          id: email,
+          name: registeredUsers[email].name,
+          email: email
         };
         setUser(userData);
         localStorage.setItem("user", JSON.stringify(userData));
@@ -74,17 +86,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const register = async (name: string, email: string, password: string) => {
     setIsLoading(true);
     try {
-      // Simulate API call delay
+      // Simular atraso de API
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // For demo purposes, just create a new user object
+      // Verificar se o email já está registrado
+      if (registeredUsers[email]) {
+        toast({
+          title: "Erro no registro",
+          description: "Este email já está cadastrado",
+          variant: "destructive"
+        });
+        setIsLoading(false);
+        return;
+      }
+      
+      // Adicionar novo usuário à lista
+      setRegisteredUsers(prev => ({
+        ...prev,
+        [email]: { name, password }
+      }));
+      
+      // Para demo, fazer login automático após registro
       const userData = {
-        id: Math.random().toString(36).slice(2),
+        id: email,
         name,
         email
       };
       setUser(userData);
       localStorage.setItem("user", JSON.stringify(userData));
+      
       toast({
         title: "Registro realizado com sucesso",
         description: "Sua conta foi criada.",
@@ -112,7 +142,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const forgotPassword = async (email: string) => {
     setIsLoading(true);
     try {
-      // Simulate API call delay
+      // Simular atraso de API
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       toast({
