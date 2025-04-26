@@ -55,7 +55,7 @@ export const PlateResult = ({
               ) : (
                 <>
                   <p className="text-sm text-gray-500 mb-1">Placa Identificada</p>
-                  <h2 className="text-4xl font-bold tracking-wider">{plateText}</h2>
+                  <h2 className="text-4xl font-bold tracking-wider">{plateText.toUpperCase()}</h2>
                   <div className="mt-2 text-sm text-gray-500">
                     Confiança: {confidence}%
                     <div className="w-full bg-gray-200 rounded-full h-2 mt-1">

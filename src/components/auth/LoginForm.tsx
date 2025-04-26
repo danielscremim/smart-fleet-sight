@@ -18,7 +18,7 @@ export function LoginForm({ onSwitchToRegister, onSwitchToForgotPassword }: Logi
   const [errors, setErrors] = useState<{email?: string; password?: string}>({});
   
   const { login, isLoading } = useAuth();
-  const navigate = useNavigate(); // Adicionar esta linha
+  const navigate = useNavigate();
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,9 +39,13 @@ export function LoginForm({ onSwitchToRegister, onSwitchToForgotPassword }: Logi
     // Submit
     try {
       await login(email, password);
-      navigate('/'); // Adicionar esta linha para redirecionar após login bem-sucedido
+      // Aguardar um momento antes de redirecionar para garantir que o estado foi atualizado
+      setTimeout(() => {
+        navigate('/inicio');
+      }, 100);
     } catch (error) {
       // Error handling is done in the AuthContext
+      console.error("Erro no login:", error);
     }
   };
   

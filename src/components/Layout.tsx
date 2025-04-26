@@ -37,9 +37,9 @@ export function Layout({ children }: LayoutProps) {
           <ul className="space-y-1">
             <li>
               <Link 
-                to="/" 
+                to="/inicio" 
                 className={`flex items-center p-3 rounded-md transition-colors ${
-                  location.pathname === "/" 
+                  location.pathname === "/inicio" 
                     ? "bg-anpr-lightGray text-anpr-darkBlue"
                     : "hover:bg-anpr-lightGray text-gray-600"
                 }`}
@@ -113,8 +113,8 @@ export function Layout({ children }: LayoutProps) {
         
         {/* Mobile navigation */}
         <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t flex items-center">
-          <Link to="/" className="flex-1 py-3 flex flex-col items-center justify-center">
-            <Home className={`h-5 w-5 ${location.pathname === "/" ? "text-anpr-blue" : "text-gray-500"}`} />
+          <Link to="/inicio" className="flex-1 py-3 flex flex-col items-center justify-center">
+            <Home className={`h-5 w-5 ${location.pathname === "/inicio" ? "text-anpr-blue" : "text-gray-500"}`} />
             <span className="text-xs mt-1">Início</span>
           </Link>
           <Link to="/dashboard" className="flex-1 py-3 flex flex-col items-center justify-center">

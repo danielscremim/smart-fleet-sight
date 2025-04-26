@@ -8,12 +8,13 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { TruckProvider } from "@/contexts/TruckContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { Layout } from "@/components/Layout";
-
+import Home from './pages/Home';
 import NotFound from "./pages/NotFound";
 import AuthPage from "./pages/AuthPage";
-import HomePage from "./pages/HomePage";
+import HomePage from "./pages/Inicio";
 import DashboardPage from "./pages/DashboardPage";
 import PlateReaderPage from "./pages/PlateReaderPage";
+import Inicio from "./pages/Inicio";
 
 const queryClient = new QueryClient();
 
@@ -26,18 +27,25 @@ const App = () => (
         <TruckProvider>
           <BrowserRouter>
             <Routes>
-              {/* Public route */}
+              {/* Página institucional pública */}
+              <Route path="/" element={<Home />} />
+
+              {/* Página de autenticação */}
               <Route path="/auth" element={<AuthPage />} />
-              
-              {/* Protected routes */}
-              <Route path="/" element={
+
+              {/* Redirecionamentos para rotas antigas de login/registro */}
+              <Route path="/login" element={<Navigate to="/auth" replace />} />
+              <Route path="/register" element={<Navigate to="/auth" replace />} />
+
+              {/* Home interna protegida */}
+              <Route path="/inicio" element={
                 <ProtectedRoute>
                   <Layout>
-                    <HomePage />
+                    <Inicio />
                   </Layout>
                 </ProtectedRoute>
               } />
-              
+
               <Route path="/dashboard" element={
                 <ProtectedRoute>
                   <Layout>
@@ -45,7 +53,7 @@ const App = () => (
                   </Layout>
                 </ProtectedRoute>
               } />
-              
+
               <Route path="/plate-reader" element={
                 <ProtectedRoute>
                   <Layout>
@@ -53,8 +61,8 @@ const App = () => (
                   </Layout>
                 </ProtectedRoute>
               } />
-              
-              {/* Redirect to auth if not logged in */}
+
+              {/* Página não encontrada */}
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

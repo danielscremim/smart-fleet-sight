@@ -1,25 +1,32 @@
 
-import React, { createContext, useContext, useEffect, useState } from "react";
-import { useToast } from "@/components/ui/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useToast } from '@/components/ui/use-toast';
 
-type User = {
+interface User {
   id: string;
   name: string;
   email: string;
-};
+}
 
-type AuthContextType = {
+interface AuthContextType {
   user: User | null;
   isLoading: boolean;
+  isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
   logout: () => void;
   forgotPassword: (email: string) => Promise<void>;
-  isAuthenticated: boolean;
-};
+}
 
-const AuthContext = createContext<AuthContextType>({} as AuthContextType);
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth deve ser usado dentro de um AuthProvider');
+  }
+  return context;
+};
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -38,7 +45,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Verificar se o usuário está armazenado no localStorage
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
-      setUser(JSON.parse(storedUser));
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch (error) {
+        console.error("Erro ao analisar dados do usuário:", error);
+        localStorage.removeItem("user");
+      }
     }
     setIsLoading(false);
     
@@ -65,12 +77,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           title: "Login realizado com sucesso",
           description: "Bem-vindo de volta!",
         });
+        return Promise.resolve();
       } else {
         toast({
           title: "Erro no login",
           description: "Email ou senha incorretos",
           variant: "destructive"
         });
+        return Promise.reject(new Error("Credenciais inválidas"));
       }
     } catch (error) {
       toast({
@@ -78,65 +92,94 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         description: "Ocorreu um erro durante o login",
         variant: "destructive"
       });
+      return Promise.reject(error);
     } finally {
       setIsLoading(false);
     }
   };
 
   const register = async (name: string, email: string, password: string) => {
-    setIsLoading(true);
     try {
-      // Simular atraso de API
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      console.log("Tentando registrar usuário:", { name, email });
+      setLoading(true);
       
-      // Verificar se o email já está registrado
-      if (registeredUsers[email]) {
-        toast({
-          title: "Erro no registro",
-          description: "Este email já está cadastrado",
-          variant: "destructive"
-        });
-        setIsLoading(false);
-        return;
-      }
+      // Adicione dados do usuário (nome) como metadados
+      const { error } = await supabase.auth.signUp({ 
+        email, 
+        password,
+        options: {
+          data: {
+            name: name
+          }
+        }
+      });
       
-      // Adicionar novo usuário à lista
-      setRegisteredUsers(prev => ({
-        ...prev,
-        [email]: { name, password }
-      }));
-      
-      // Para demo, fazer login automático após registro
-      const userData = {
-        id: email,
-        name,
-        email
-      };
-      setUser(userData);
-      localStorage.setItem("user", JSON.stringify(userData));
+      if (error) throw error;
       
       toast({
-        title: "Registro realizado com sucesso",
-        description: "Sua conta foi criada.",
+        title: 'Registro realizado com sucesso',
+        description: 'Verifique seu e-mail para confirmar o cadastro.',
       });
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Erro ao registrar';
       toast({
-        title: "Erro no registro",
-        description: "Ocorreu um erro durante o registro",
-        variant: "destructive"
+        title: 'Erro de registro',
+        description: errorMessage,
+        variant: 'destructive',
       });
+      throw error;
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem("user");
-    setUser(null);
-    toast({
-      title: "Logout realizado",
-      description: "Você saiu do sistema.",
-    });
+  const logout = async () => {
+    try {
+      setLoading(true);
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) throw error;
+      
+      toast({
+        title: 'Logout realizado',
+        description: 'Você foi desconectado com sucesso.',
+      });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Erro ao fazer logout';
+      toast({
+        title: 'Erro',
+        description: errorMessage,
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resetPassword = async (email: string) => {
+    try {
+      setLoading(true);
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth/reset-password`,
+      });
+      
+      if (error) throw error;
+      
+      toast({
+        title: 'E-mail enviado',
+        description: 'Verifique seu e-mail para redefinir sua senha.',
+      });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Erro ao solicitar redefinição de senha';
+      toast({
+        title: 'Erro',
+        description: errorMessage,
+        variant: 'destructive',
+      });
+      throw error;
+    } finally {
+      setLoading(false);
+    }
   };
 
   const forgotPassword = async (email: string) => {
@@ -176,5 +219,3 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     </AuthContext.Provider>
   );
 };
-
-export const useAuth = () => useContext(AuthContext);

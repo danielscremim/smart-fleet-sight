@@ -35,7 +35,7 @@ export default function PlateReaderPage() {
   };
   
   const handlePlateTextChange = (text: string) => {
-    setPlateText(text);
+    setPlateText(text.toUpperCase());
   };
 
   return (

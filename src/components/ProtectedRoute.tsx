@@ -10,6 +10,9 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { isAuthenticated, isLoading } = useAuth();
   const location = useLocation();
   
+  // Adicionar log para depuração
+  console.log("ProtectedRoute - isAuthenticated:", isAuthenticated, "isLoading:", isLoading);
+  
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">

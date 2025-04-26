@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { BarChart3, TrendingUp, Clock, ShieldCheck, DollarSign, ArrowRight } from "lucide-react";
-export default function HomePage() {
+export default function Inicio() {
   return <div className="space-y-8 animate-fade-in">
       {/* Hero Section */}
       <section className="bg-anpr-blue text-white rounded-lg overflow-hidden shadow-lg">

@@ -36,7 +36,17 @@ export function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
     } = {};
     
     if (!name) newErrors.name = "Nome é obrigatório";
-    if (!email) newErrors.email = "Email é obrigatório";
+    
+    // Validação de email mais rigorosa
+    if (!email) {
+      newErrors.email = "Email é obrigatório";
+    } else {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        newErrors.email = "Formato de email inválido";
+      }
+    }
+    
     if (!password) newErrors.password = "Senha é obrigatória";
     if (password.length < 6) newErrors.password = "Senha deve ter ao menos 6 caracteres";
     if (password !== confirmPassword) newErrors.confirmPassword = "Senhas não conferem";

@@ -1,9 +1,9 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Truck, TruckIcon, ArrowRight, ArrowLeft } from "lucide-react";
+import { Truck, TruckIcon, ArrowRight, ArrowLeft, RefreshCw } from "lucide-react";
 import {
   BarChart,
   Bar,
@@ -22,75 +22,75 @@ import {
 import { useTrucks, TruckStatus } from "@/contexts/TruckContext";
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 export default function DashboardPage() {
   const { 
-    filteredTrucks, 
-    currentPeriod, 
-    setCurrentPeriod, 
-    currentStatusFilter,
-    setCurrentStatusFilter,
+    trucks,
+    loading,
+    error,
+    stats,
+    refreshTrucks,
     updateTruckStatus
   } = useTrucks();
 
+  // Atualizar dados ao carregar a página
+  useEffect(() => {
+    refreshTrucks();
+  }, []); // Remova refreshTrucks da dependência
+
   // Function to get status label
-  const getStatusLabel = (status: TruckStatus): string => {
+  const getStatusLabel = (status: Truck['status']): string => {
     switch (status) {
       case "entering": return "Entrando";
-      case "inside": return "Na cidade";
-      case "exited": return "Saiu";
+      case "in_city": return "Na cidade";
+      case "leaving": return "Saindo";
+      case "outside": return "Fora";
       default: return "";
     }
   };
 
-  // Function to get next status
-  const getNextStatus = (currentStatus: TruckStatus): TruckStatus => {
-    switch (currentStatus) {
-      case "entering": return "inside";
-      case "inside": return "exited";
-      case "exited": return "entering";
-      default: return "entering";
-    }
-  };
-
   // Function to get status color
-  const getStatusColor = (status: TruckStatus): string => {
+  const getStatusColor = (status: Truck['status']): string => {
     switch (status) {
-      case "entering": return "text-status-entering";
-      case "inside": return "text-status-inside";
-      case "exited": return "text-status-exited";
+      case "entering": return "text-blue-500";
+      case "in_city": return "text-amber-500";
+      case "leaving": return "text-orange-500";
+      case "outside": return "text-green-500";
       default: return "";
     }
   };
 
   // Format timestamp
-  const formatTimestamp = (date: Date | null): string => {
-    if (!date) return "N/A";
-    return format(date, "dd/MM/yyyy HH:mm", { locale: ptBR });
+  const formatTimestamp = (dateStr: string | null): string => {
+    if (!dateStr) return "N/A";
+    return format(new Date(dateStr), "dd/MM/yyyy HH:mm", { locale: ptBR });
   };
 
   // Chart data
   const statusCounts = {
-    entering: filteredTrucks.filter(t => t.currentStatus === "entering").length,
-    inside: filteredTrucks.filter(t => t.currentStatus === "inside").length,
-    exited: filteredTrucks.filter(t => t.currentStatus === "exited").length
+    entering: stats?.entering || 0,
+    in_city: stats?.in_city || 0,
+    leaving: stats?.leaving || 0,
+    outside: stats?.outside || 0
   };
 
   const pieData = [
     { name: "Entrando", value: statusCounts.entering, color: "#2196F3" },
-    { name: "Na cidade", value: statusCounts.inside, color: "#FFC107" },
-    { name: "Saíram", value: statusCounts.exited, color: "#4CAF50" }
+    { name: "Na cidade", value: statusCounts.in_city, color: "#FFC107" },
+    { name: "Saindo", value: statusCounts.leaving, color: "#FF9800" },
+    { name: "Fora", value: statusCounts.outside, color: "#4CAF50" }
   ];
 
-  // Data for bar chart (mock data - in a real app, this would be based on actual historical data)
+  // Dados para o gráfico de barras
   const barData = [
-    { name: "Seg", entering: 15, inside: 28, exited: 22 },
-    { name: "Ter", entering: 18, inside: 32, exited: 24 },
-    { name: "Qua", entering: 22, inside: 35, exited: 28 },
-    { name: "Qui", entering: 25, inside: 30, exited: 27 },
-    { name: "Sex", entering: 30, inside: 40, exited: 35 },
-    { name: "Sab", entering: 12, inside: 20, exited: 18 },
-    { name: "Dom", entering: 8, inside: 15, exited: 12 },
+    { name: "Segunda", entering: 4, inside: 6, exited: 2 },
+    { name: "Terça", entering: 3, inside: 7, exited: 5 },
+    { name: "Quarta", entering: 5, inside: 9, exited: 3 },
+    { name: "Quinta", entering: 7, inside: 10, exited: 4 },
+    { name: "Sexta", entering: 6, inside: 8, exited: 7 },
+    { name: "Sábado", entering: 2, inside: 4, exited: 3 },
+    { name: "Domingo", entering: 1, inside: 2, exited: 1 }
   ];
 
   return (
@@ -102,29 +102,20 @@ export default function DashboardPage() {
         </div>
         
         <div className="flex flex-wrap gap-2">
-          {/* Period tabs */}
-          <Tabs value={currentPeriod} onValueChange={(v: any) => setCurrentPeriod(v)}>
-            <TabsList>
-              <TabsTrigger value="day">Dia</TabsTrigger>
-              <TabsTrigger value="week">Semana</TabsTrigger>
-              <TabsTrigger value="month">Mês</TabsTrigger>
-            </TabsList>
-          </Tabs>
-          
-          {/* Status filter */}
-          <Tabs value={currentStatusFilter} onValueChange={(v: any) => setCurrentStatusFilter(v)}>
-            <TabsList>
-              <TabsTrigger value="all">Todos</TabsTrigger>
-              <TabsTrigger value="entering">Entrando</TabsTrigger>
-              <TabsTrigger value="inside">Na cidade</TabsTrigger>
-              <TabsTrigger value="exited">Saíram</TabsTrigger>
-            </TabsList>
-          </Tabs>
+          {/* Botão de atualizar */}
+          <Button 
+            variant="outline" 
+            onClick={() => refreshTrucks()}
+            disabled={loading}
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+            {loading ? 'Atualizando...' : 'Atualizar Dados'}
+          </Button>
         </div>
       </div>
       
       {/* Stats cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Caminhões Entrando</CardTitle>
@@ -135,7 +126,7 @@ export default function DashboardPage() {
           <CardContent>
             <div className="text-3xl font-bold">{statusCounts.entering}</div>
             <p className="text-xs text-gray-500">
-              Caminhões que ainda entrarão na cidade
+              Caminhões entrando na cidade
             </p>
           </CardContent>
         </Card>
@@ -148,24 +139,39 @@ export default function DashboardPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">{statusCounts.inside}</div>
+            <div className="text-3xl font-bold">{statusCounts.in_city}</div>
             <p className="text-xs text-gray-500">
-              Caminhões que já entraram e estão na cidade
+              Caminhões que estão na cidade
             </p>
           </CardContent>
         </Card>
         
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Caminhões que Saíram</CardTitle>
+            <CardTitle className="text-sm font-medium">Caminhões Saindo</CardTitle>
+            <div className="h-8 w-8 rounded-full bg-orange-100 flex items-center justify-center">
+              <ArrowLeft className="h-4 w-4 text-orange-500" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold">{statusCounts.leaving}</div>
+            <p className="text-xs text-gray-500">
+              Caminhões saindo da cidade
+            </p>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Caminhões Fora</CardTitle>
             <div className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center">
               <ArrowLeft className="h-4 w-4 text-green-500" />
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">{statusCounts.exited}</div>
+            <div className="text-3xl font-bold">{statusCounts.outside}</div>
             <p className="text-xs text-gray-500">
-              Caminhões que já saíram da cidade
+              Caminhões fora da cidade
             </p>
           </CardContent>
         </Card>
@@ -203,7 +209,7 @@ export default function DashboardPage() {
         
         <Card>
           <CardHeader>
-            <CardTitle>Fluxo Semanal</CardTitle>
+            <CardTitle>Atividade por Dia</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
@@ -221,10 +227,11 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       </div>
+
       
       {/* Trucks list */}
       <div>
-        <h2 className="text-xl font-semibold mb-4">Lista de Caminhões ({filteredTrucks.length})</h2>
+        <h2 className="text-xl font-semibold mb-4">Lista de Caminhões ({trucks?.length || 0})</h2>
         
         <div className="bg-white rounded-lg shadow overflow-hidden">
           <div className="overflow-x-auto">
@@ -233,37 +240,46 @@ export default function DashboardPage() {
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Placa</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Entrada</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Saída</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Modelo</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Última Atualização</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {filteredTrucks.length > 0 ? (
-                  filteredTrucks.map((truck) => (
+                {loading ? (
+                  <tr>
+                    <td colSpan={5} className="px-6 py-4 text-center text-sm text-gray-500">
+                      Carregando dados...
+                    </td>
+                  </tr>
+                ) : trucks && trucks.length > 0 ? (
+                  trucks.map((truck) => (
                     <tr key={truck.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        {truck.licensePlate}
+                        {truck.plate}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        <span className={`inline-flex items-center ${getStatusColor(truck.currentStatus)}`}>
-                          <span className={`status-dot status-dot-${truck.currentStatus}`}></span>
-                          {getStatusLabel(truck.currentStatus)}
+                        <span className={`inline-flex items-center ${getStatusColor(truck.status)}`}>
+                          <span className={`h-2 w-2 rounded-full mr-2 bg-current`}></span>
+                          {getStatusLabel(truck.status)}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {formatTimestamp(truck.entryTime)}
+                        {truck.model || "N/A"}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {formatTimestamp(truck.exitTime)}
+                        {formatTimestamp(truck.last_seen)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <Button 
                           variant="outline"
                           size="sm" 
-                          onClick={() => updateTruckStatus(truck.id, getNextStatus(truck.currentStatus))}
+                          onClick={() => {
+                            const nextStatus = getNextStatus(truck.status);
+                            updateTruckStatus(truck.id, nextStatus);
+                          }}
                         >
-                          Alterar para {getStatusLabel(getNextStatus(truck.currentStatus))}
+                          Atualizar Status
                         </Button>
                       </td>
                     </tr>
@@ -271,7 +287,7 @@ export default function DashboardPage() {
                 ) : (
                   <tr>
                     <td colSpan={5} className="px-6 py-4 text-center text-sm text-gray-500">
-                      Nenhum caminhão encontrado no período selecionado.
+                      {error ? `Erro ao carregar dados: ${error}` : "Nenhum caminhão encontrado."}
                     </td>
                   </tr>
                 )}
@@ -282,4 +298,15 @@ export default function DashboardPage() {
       </div>
     </div>
   );
+}
+
+// Função auxiliar para determinar o próximo status
+function getNextStatus(currentStatus: Truck['status']): Truck['status'] {
+  switch (currentStatus) {
+    case "entering": return "in_city";
+    case "in_city": return "leaving";
+    case "leaving": return "outside";
+    case "outside": return "entering";
+    default: return "entering";
+  }
 }

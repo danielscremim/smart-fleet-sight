@@ -14,7 +14,8 @@ export const usePlateReader = () => {
   const [error, setError] = useState<string | null>(null);
   const [isManualEntryMode, setIsManualEntryMode] = useState(false);
   
-  const { addTruck } = useTrucks();
+  // Obter a função createTruck do contexto
+  const { createTruck } = useTrucks();
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -66,13 +67,13 @@ export const usePlateReader = () => {
       console.log("Resposta recebida:", data);
       
       if (data && data.plate) {
-        setPlateText(data.plate);
+        setPlateText(data.plate.toUpperCase());
         setConfidence(data.confidence * 100);
         setIsProcessed(true);
         
         toast({
           title: "Placa identificada",
-          description: `A placa ${data.plate} foi identificada com ${Math.round(data.confidence * 100)}% de confiança.`
+          description: `A placa ${data.plate.toUpperCase()} foi identificada com ${Math.round(data.confidence * 100)}% de confiança.`
         });
       } else if (data && data.error) {
         setError(data.error);
@@ -110,13 +111,33 @@ export const usePlateReader = () => {
 
   const handleRegisterPlate = () => {
     if (plateText) {
-      addTruck(plateText);
-      resetState();
-      
-      toast({
-        title: "Placa registrada com sucesso",
-        description: `A placa ${plateText} foi adicionada ao sistema.`
-      });
+      try {
+        // Criar um novo caminhão usando a função createTruck
+        // Adicionando todos os campos obrigatórios
+        createTruck({
+          plate: plateText.toUpperCase(),
+          status: 'entering',
+          last_seen: new Date().toISOString(),
+          model: 'Não especificado', // Valor padrão para o campo model
+          year: new Date().getFullYear(), // Valor padrão para o campo year (ano atual)
+          company: 'Não especificado', // Valor padrão para o campo company
+          driver_name: 'Não especificado' // Valor padrão para o campo driver_name (caso seja obrigatório)
+        });
+        
+        resetState();
+        
+        toast({
+          title: "Placa registrada com sucesso",
+          description: `A placa ${plateText.toUpperCase()} foi adicionada ao sistema.`
+        });
+      } catch (error) {
+        console.error("Erro ao registrar placa:", error);
+        toast({
+          variant: "destructive",
+          title: "Erro ao registrar",
+          description: "Não foi possível registrar a placa. Tente novamente mais tarde."
+        });
+      }
     }
   };
 
