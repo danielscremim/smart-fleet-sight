@@ -14,8 +14,8 @@ export const usePlateReader = () => {
   const [error, setError] = useState<string | null>(null);
   const [isManualEntryMode, setIsManualEntryMode] = useState(false);
   
-  // Obter a função createTruck do contexto
-  const { createTruck } = useTrucks();
+  // Obter as funções necessárias do contexto
+  const { createTruck, getTruckByPlate, updateTruckStatus, deleteTruck } = useTrucks();
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -109,27 +109,79 @@ export const usePlateReader = () => {
     }
   };
 
-  const handleRegisterPlate = () => {
+  const handleRegisterPlate = async () => {
     if (plateText) {
       try {
-        // Criar um novo caminhão usando a função createTruck
-        // Adicionando todos os campos obrigatórios
-        createTruck({
-          plate: plateText.toUpperCase(),
-          status: 'entering',
-          last_seen: new Date().toISOString(),
-          model: 'Não especificado', // Valor padrão para o campo model
-          year: new Date().getFullYear(), // Valor padrão para o campo year (ano atual)
-          company: 'Não especificado', // Valor padrão para o campo company
-          driver_name: 'Não especificado' // Valor padrão para o campo driver_name (caso seja obrigatório)
-        });
+        // Verificar se o caminhão já existe
+        const existingTruck = await getTruckByPlate(plateText.toUpperCase());
+        
+        if (existingTruck) {
+          // Se o caminhão já existe, verificamos seu status
+          if (existingTruck.status === 'outside') {
+            // Se o status for 'outside', criamos um novo registro sem excluir o antigo
+            try {
+              // Armazenar informações do caminhão para o novo registro
+              const { model, year, company, driver_name } = existingTruck;
+              
+              // Criar um novo registro com as mesmas informações, mas status 'entering'
+              await createTruck({
+                plate: plateText.toUpperCase(),
+                status: 'entering',
+                last_seen: new Date().toISOString(),
+                model: model || 'Não especificado',
+                year: year || new Date().getFullYear(),
+                company: company || 'Não especificado',
+                driver_name: driver_name || 'Não especificado'
+              });
+              
+              toast({
+                title: "Nova viagem iniciada",
+                description: `Uma nova viagem foi iniciada para a placa ${plateText.toUpperCase()}.`
+              });
+            } catch (error) {
+              console.error("Erro ao processar nova viagem:", error);
+              throw error;
+            }
+          } else {
+            // Se não for 'outside', atualizamos o status normalmente
+            let newStatus: Truck['status'] = 'entering';
+            
+            // Lógica para alternar o status
+            if (existingTruck.status === 'entering') {
+              newStatus = 'in_city';
+            } else if (existingTruck.status === 'in_city') {
+              newStatus = 'leaving';
+            } else if (existingTruck.status === 'leaving') {
+              newStatus = 'outside';
+            }
+            
+            // Atualiza o status do caminhão
+            await updateTruckStatus(existingTruck.id, newStatus);
+            
+            toast({
+              title: "Status do caminhão atualizado",
+              description: `A placa ${plateText.toUpperCase()} foi atualizada para status: ${getStatusLabel(newStatus)}.`
+            });
+          }
+        } else {
+          // Se não existe, cria um novo caminhão
+          await createTruck({
+            plate: plateText.toUpperCase(),
+            status: 'entering',
+            last_seen: new Date().toISOString(),
+            model: 'Não especificado',
+            year: new Date().getFullYear(),
+            company: 'Não especificado',
+            driver_name: 'Não especificado'
+          });
+          
+          toast({
+            title: "Placa registrada com sucesso",
+            description: `A placa ${plateText.toUpperCase()} foi adicionada ao sistema.`
+          });
+        }
         
         resetState();
-        
-        toast({
-          title: "Placa registrada com sucesso",
-          description: `A placa ${plateText.toUpperCase()} foi adicionada ao sistema.`
-        });
       } catch (error) {
         console.error("Erro ao registrar placa:", error);
         toast({
@@ -140,6 +192,17 @@ export const usePlateReader = () => {
       }
     }
   };
+
+// Função auxiliar para obter o rótulo do status em português
+const getStatusLabel = (status: Truck['status']): string => {
+  switch (status) {
+    case 'entering': return 'Entrando';
+    case 'in_city': return 'Na cidade';
+    case 'leaving': return 'Saindo';
+    case 'outside': return 'Fora da cidade';
+    default: return status;
+  }
+};
 
   const resetState = () => {
     setSelectedImage(null);

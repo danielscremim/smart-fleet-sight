@@ -1,0 +1,750 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Smart Fleet Sight API",
+    "description": "API para gerenciamento de frota e reconhecimento automático de placas de caminhões",
+    "version": "1.0.0",
+    "contact": {
+      "email": "contato@smartfleetsight.com"
+    },
+    "license": {
+      "name": "MIT",
+      "url": "https://opensource.org/licenses/MIT"
+    }
+  },
+  "servers": [
+    {
+      "url": "/api",
+      "description": "Servidor de desenvolvimento"
+    },
+    {
+      "url": "https://api.smartfleetsight.com",
+      "description": "Servidor de produção"
+    }
+  ],
+  "tags": [
+    {
+      "name": "caminhões",
+      "description": "Operações relacionadas a caminhões"
+    },
+    {
+      "name": "placas",
+      "description": "Operações relacionadas a reconhecimento de placas"
+    },
+    {
+      "name": "estatísticas",
+      "description": "Operações relacionadas a estatísticas e métricas"
+    },
+    {
+      "name": "autenticação",
+      "description": "Operações relacionadas a autenticação e autorização"
+    }
+  ],
+  "paths": {
+    "/trucks": {
+      "get": {
+        "tags": ["caminhões"],
+        "summary": "Listar todos os caminhões",
+        "description": "Retorna uma lista de todos os caminhões cadastrados no sistema",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "description": "Filtrar por status do caminhão",
+            "schema": {
+              "type": "string",
+              "enum": ["entering", "in_city", "leaving", "outside"]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de caminhões obtida com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Truck"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Não autorizado - Token de autenticação ausente ou inválido"
+          },
+          "500": {
+            "description": "Erro interno do servidor"
+          }
+        }
+      },
+      "post": {
+        "tags": ["caminhões"],
+        "summary": "Adicionar um novo caminhão",
+        "description": "Cria um novo registro de caminhão no sistema",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TruckInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Caminhão criado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Truck"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados inválidos"
+          },
+          "401": {
+            "description": "Não autorizado - Token de autenticação ausente ou inválido"
+          },
+          "500": {
+            "description": "Erro interno do servidor"
+          }
+        }
+      }
+    },
+    "/trucks/{id}": {
+      "get": {
+        "tags": ["caminhões"],
+        "summary": "Obter caminhão por ID",
+        "description": "Retorna os detalhes de um caminhão específico",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "ID do caminhão",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Caminhão encontrado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Truck"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Caminhão não encontrado"
+          },
+          "401": {
+            "description": "Não autorizado - Token de autenticação ausente ou inválido"
+          },
+          "500": {
+            "description": "Erro interno do servidor"
+          }
+        }
+      },
+      "put": {
+        "tags": ["caminhões"],
+        "summary": "Atualizar caminhão",
+        "description": "Atualiza os dados de um caminhão existente",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "ID do caminhão",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TruckInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Caminhão atualizado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Truck"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados inválidos"
+          },
+          "404": {
+            "description": "Caminhão não encontrado"
+          },
+          "401": {
+            "description": "Não autorizado - Token de autenticação ausente ou inválido"
+          },
+          "500": {
+            "description": "Erro interno do servidor"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["caminhões"],
+        "summary": "Excluir caminhão",
+        "description": "Remove um caminhão do sistema",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "ID do caminhão",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Caminhão excluído com sucesso"
+          },
+          "404": {
+            "description": "Caminhão não encontrado"
+          },
+          "401": {
+            "description": "Não autorizado - Token de autenticação ausente ou inválido"
+          },
+          "500": {
+            "description": "Erro interno do servidor"
+          }
+        }
+      }
+    },
+    "/trucks/plate/{plate}": {
+      "get": {
+        "tags": ["caminhões"],
+        "summary": "Obter caminhão por placa",
+        "description": "Retorna os detalhes de um caminhão a partir da placa",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "plate",
+            "in": "path",
+            "required": true,
+            "description": "Placa do caminhão",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Caminhão encontrado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Truck"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Caminhão não encontrado"
+          },
+          "401": {
+            "description": "Não autorizado - Token de autenticação ausente ou inválido"
+          },
+          "500": {
+            "description": "Erro interno do servidor"
+          }
+        }
+      }
+    },
+    "/trucks/{id}/status": {
+      "put": {
+        "tags": ["caminhões"],
+        "summary": "Atualizar status do caminhão",
+        "description": "Atualiza apenas o status de um caminhão existente",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "ID do caminhão",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": ["entering", "in_city", "leaving", "outside"],
+                    "description": "Novo status do caminhão"
+                  }
+                },
+                "required": ["status"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Status do caminhão atualizado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Truck"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados inválidos"
+          },
+          "404": {
+            "description": "Caminhão não encontrado"
+          },
+          "401": {
+            "description": "Não autorizado - Token de autenticação ausente ou inválido"
+          },
+          "500": {
+            "description": "Erro interno do servidor"
+          }
+        }
+      }
+    },
+    "/trucks/stats": {
+      "get": {
+        "tags": ["estatísticas"],
+        "summary": "Obter estatísticas de caminhões",
+        "description": "Retorna estatísticas sobre os caminhões por status",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Estatísticas obtidas com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TruckStats"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Não autorizado - Token de autenticação ausente ou inválido"
+          },
+          "500": {
+            "description": "Erro interno do servidor"
+          }
+        }
+      }
+    },
+    "/plates/recognize": {
+      "post": {
+        "tags": ["placas"],
+        "summary": "Reconhecer placa em imagem",
+        "description": "Processa uma imagem para reconhecer a placa de um caminhão",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "image": {
+                    "type": "string",
+                    "format": "base64",
+                    "description": "Imagem em formato base64"
+                  }
+                },
+                "required": ["image"]
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "image": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Arquivo de imagem"
+                  }
+                },
+                "required": ["image"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Placa reconhecida com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlateRecognition"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Requisição inválida"
+          },
+          "404": {
+            "description": "Nenhuma placa detectada na imagem"
+          },
+          "401": {
+            "description": "Não autorizado - Token de autenticação ausente ou inválido"
+          },
+          "500": {
+            "description": "Erro interno do servidor"
+          }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "tags": ["autenticação"],
+        "summary": "Autenticar usuário",
+        "description": "Autentica um usuário e retorna um token de acesso",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "description": "Email do usuário"
+                  },
+                  "password": {
+                    "type": "string",
+                    "format": "password",
+                    "description": "Senha do usuário"
+                  }
+                },
+                "required": ["email", "password"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Autenticação bem-sucedida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "token": {
+                      "type": "string",
+                      "description": "Token de acesso JWT"
+                    },
+                    "user": {
+                      "$ref": "#/components/schemas/User"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Credenciais inválidas"
+          },
+          "500": {
+            "description": "Erro interno do servidor"
+          }
+        }
+      }
+    },
+    "/auth/register": {
+      "post": {
+        "tags": ["autenticação"],
+        "summary": "Registrar novo usuário",
+        "description": "Cria um novo usuário no sistema",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "description": "Nome do usuário"
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "description": "Email do usuário"
+                  },
+                  "password": {
+                    "type": "string",
+                    "format": "password",
+                    "description": "Senha do usuário"
+                  }
+                },
+                "required": ["name", "email", "password"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Usuário criado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "token": {
+                      "type": "string",
+                      "description": "Token de acesso JWT"
+                    },
+                    "user": {
+                      "$ref": "#/components/schemas/User"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados inválidos ou usuário já existe"
+          },
+          "500": {
+            "description": "Erro interno do servidor"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Token JWT de autenticação. Exemplo: Bearer {token}"
+      }
+    },
+    "schemas": {
+      "Truck": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Identificador único do caminhão"
+          },
+          "plate": {
+            "type": "string",
+            "description": "Placa do caminhão"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["entering", "in_city", "leaving", "outside"],
+            "description": "Status atual do caminhão"
+          },
+          "model": {
+            "type": "string",
+            "description": "Modelo do caminhão"
+          },
+          "year": {
+            "type": "integer",
+            "description": "Ano de fabricação do caminhão"
+          },
+          "company": {
+            "type": "string",
+            "description": "Empresa proprietária do caminhão"
+          },
+          "driver_name": {
+            "type": "string",
+            "description": "Nome do motorista"
+          },
+          "last_seen": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Data e hora da última atualização"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Data e hora de criação do registro"
+          }
+        },
+        "required": ["id", "plate", "status", "last_seen"]
+      },
+      "TruckInput": {
+        "type": "object",
+        "properties": {
+          "plate": {
+            "type": "string",
+            "description": "Placa do caminhão"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["entering", "in_city", "leaving", "outside"],
+            "description": "Status atual do caminhão"
+          },
+          "model": {
+            "type": "string",
+            "description": "Modelo do caminhão"
+          },
+          "year": {
+            "type": "integer",
+            "description": "Ano de fabricação do caminhão"
+          },
+          "company": {
+            "type": "string",
+            "description": "Empresa proprietária do caminhão"
+          },
+          "driver_name": {
+            "type": "string",
+            "description": "Nome do motorista"
+          },
+          "last_seen": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Data e hora da última atualização"
+          }
+        },
+        "required": ["plate", "status"]
+      },
+      "TruckStats": {
+        "type": "object",
+        "properties": {
+          "entering": {
+            "type": "integer",
+            "description": "Número de caminhões entrando na cidade"
+          },
+          "in_city": {
+            "type": "integer",
+            "description": "Número de caminhões na cidade"
+          },
+          "leaving": {
+            "type": "integer",
+            "description": "Número de caminhões saindo da cidade"
+          },
+          "outside": {
+            "type": "integer",
+            "description": "Número de caminhões fora da cidade"
+          }
+        }
+      },
+      "PlateRecognition": {
+        "type": "object",
+        "properties": {
+          "plate": {
+            "type": "string",
+            "description": "Placa reconhecida"
+          },
+          "confidence": {
+            "type": "number",
+            "format": "float",
+            "description": "Nível de confiança do reconhecimento (0-100)"
+          },
+          "format": {
+            "type": "string",
+            "enum": ["mercosul", "other"],
+            "description": "Formato da placa"
+          }
+        }
+      },
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Identificador único do usuário"
+          },
+          "name": {
+            "type": "string",
+            "description": "Nome do usuário"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "Email do usuário"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Data e hora de criação do usuário"
+          }
+        }
+      }
+    }
+  }
+}

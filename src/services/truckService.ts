@@ -1,132 +1,178 @@
-import { supabase } from '@/lib/supabase';
-import { Truck, TruckInput } from '@/types/truck';
+import { supabase } from "@/integrations/supabase/client";
+import { Truck } from "@/types/truck";
 
-const TABLE_NAME = 'trucks';
-
-export const truckService = {
-  // Buscar todos os caminhões
-  async getAllTrucks(): Promise<Truck[]> {
+// Funções individuais
+const getAllTrucks = async () => {
+  try {
     const { data, error } = await supabase
-      .from(TABLE_NAME)
+      .from('trucks')
       .select('*')
-      .order('created_at', { ascending: false });
-    
-    if (error) {
-      console.error('Erro ao buscar caminhões:', error);
-      throw error;
-    }
-    
+      .order('last_seen', { ascending: false });
+      
+    if (error) throw error;
     return data || [];
-  },
-  
-  // Buscar caminhão por ID
-  async getTruckById(id: string): Promise<Truck | null> {
+  } catch (error) {
+    console.error("Erro ao buscar caminhões:", error);
+    return [];
+  }
+};
+
+// Obter caminhão por ID
+const getTruckById = async (id: string) => {
+  try {
     const { data, error } = await supabase
-      .from(TABLE_NAME)
+      .from('trucks')
       .select('*')
       .eq('id', id)
       .single();
-    
-    if (error) {
-      console.error(`Erro ao buscar caminhão com ID ${id}:`, error);
-      throw error;
-    }
-    
+      
+    if (error) throw error;
     return data;
-  },
-  
-  // Buscar caminhão por placa
-  async getTruckByPlate(plate: string): Promise<Truck | null> {
+  } catch (error) {
+    console.error("Erro ao buscar caminhão:", error);
+    return null;
+  }
+};
+
+// Obter caminhão por placa
+const getTruckByPlate = async (plate: string) => {
+  try {
     const { data, error } = await supabase
-      .from(TABLE_NAME)
+      .from('trucks')
       .select('*')
-      .ilike('plate', plate)
+      .eq('plate', plate)
       .single();
-    
-    if (error && error.code !== 'PGRST116') { // Ignora erro de "não encontrado"
-      console.error(`Erro ao buscar caminhão com placa ${plate}:`, error);
-      throw error;
-    }
-    
+      
+    if (error && error.code !== 'PGRST116') throw error;
     return data;
-  },
-  
-  // Criar um novo caminhão
-  async createTruck(truck: TruckInput): Promise<Truck> {
+  } catch (error) {
+    console.error("Erro ao buscar caminhão por placa:", error);
+    return null;
+  }
+};
+
+// Atualizar status do caminhão
+const updateTruckStatus = async (id: string, status: Truck['status']) => {
+  try {
+    const now = new Date().toISOString();
+    
+    // Atualizamos o caminhão com o novo status e timestamp
+    // sem tentar acessar ou atualizar status_timestamps
     const { data, error } = await supabase
-      .from(TABLE_NAME)
+      .from('trucks')
+      .update({ 
+        status, 
+        last_seen: now
+      })
+      .eq('id', id)
+      .select();
+      
+    if (error) throw error;
+    return data?.[0];
+  } catch (error) {
+    console.error("Erro ao atualizar status do caminhão:", error);
+    throw error;
+  }
+};
+
+// Criar um novo caminhão
+const createTruck = async (truck: Omit<Truck, 'id'>) => {
+  try {
+    // Não incluímos o campo status_timestamps
+    const { data, error } = await supabase
+      .from('trucks')
       .insert([truck])
-      .select()
-      .single();
-    
+      .select();
+      
     if (error) {
-      console.error('Erro ao criar caminhão:', error);
+      console.error("Erro ao criar caminhão:", error);
       throw error;
     }
     
-    return data;
-  },
-  
-  // Atualizar um caminhão existente
-  async updateTruck(id: string, truck: Partial<TruckInput>): Promise<Truck> {
+    return data?.[0];
+  } catch (error) {
+    console.error("Erro ao criar caminhão:", error);
+    throw error;
+  }
+};
+
+// Função para obter estatísticas de caminhões
+const getTruckStats = async () => {
+  try {
     const { data, error } = await supabase
-      .from(TABLE_NAME)
-      .update(truck)
-      .eq('id', id)
-      .select()
-      .single();
-    
-    if (error) {
-      console.error(`Erro ao atualizar caminhão com ID ${id}:`, error);
-      throw error;
-    }
-    
-    return data;
-  },
-  
-  // Atualizar o status de um caminhão
-  async updateTruckStatus(id: string, status: Truck['status']): Promise<Truck> {
-    return this.updateTruck(id, { 
-      status, 
-      last_seen: new Date().toISOString() 
-    });
-  },
-  
-  // Excluir um caminhão
-  async deleteTruck(id: string): Promise<void> {
-    const { error } = await supabase
-      .from(TABLE_NAME)
-      .delete()
-      .eq('id', id);
-    
-    if (error) {
-      console.error(`Erro ao excluir caminhão com ID ${id}:`, error);
-      throw error;
-    }
-  },
-  
-  // Buscar estatísticas de caminhões por status
-  async getTruckStats(): Promise<Record<Truck['status'], number>> {
-    const { data, error } = await supabase
-      .from(TABLE_NAME)
+      .from('trucks')
       .select('status');
+      
+    if (error) throw error;
     
-    if (error) {
-      console.error('Erro ao buscar estatísticas de caminhões:', error);
-      throw error;
-    }
-    
-    const stats: Record<Truck['status'], number> = {
+    // Inicializar contadores
+    const stats = {
       entering: 0,
       in_city: 0,
       leaving: 0,
       outside: 0
     };
     
-    data.forEach(truck => {
-      stats[truck.status as Truck['status']]++;
+    // Contar caminhões por status
+    data?.forEach(truck => {
+      if (truck.status in stats) {
+        stats[truck.status as keyof typeof stats]++;
+      }
     });
     
     return stats;
+  } catch (error) {
+    console.error("Erro ao obter estatísticas:", error);
+    return {
+      entering: 0,
+      in_city: 0,
+      leaving: 0,
+      outside: 0
+    };
   }
+};
+
+// Atualizar caminhão
+const updateTruck = async (id: string, truck: Partial<Truck>) => {
+  try {
+    const { data, error } = await supabase
+      .from('trucks')
+      .update(truck)
+      .eq('id', id)
+      .select();
+      
+    if (error) throw error;
+    return data?.[0];
+  } catch (error) {
+    console.error("Erro ao atualizar caminhão:", error);
+    throw error;
+  }
+};
+
+// Excluir caminhão
+const deleteTruck = async (id: string) => {
+  try {
+    const { error } = await supabase
+      .from('trucks')
+      .delete()
+      .eq('id', id);
+      
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.error("Erro ao excluir caminhão:", error);
+    throw error;
+  }
+};
+
+// Exportar todas as funções como um objeto único
+export const truckService = {
+  getAllTrucks,
+  getTruckById,
+  getTruckByPlate,
+  updateTruckStatus,
+  createTruck,
+  getTruckStats,
+  updateTruck,
+  deleteTruck
 };

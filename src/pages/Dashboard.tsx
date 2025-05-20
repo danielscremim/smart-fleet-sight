@@ -754,3 +754,48 @@ export default function Dashboard() {
     </div>
   );
 }
+
+const formatDateTime = (dateString?: string) => {
+  if (!dateString) return "Não registrado";
+  
+  const date = new Date(dateString);
+  return new Intl.DateTimeFormat('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  }).format(date);
+};
+
+<Table>
+  <TableHeader>
+    <TableRow>
+      <TableHead>Placa</TableHead>
+      <TableHead>Status</TableHead>
+      <TableHead>Último Registro</TableHead>
+      <TableHead>Entrando</TableHead>
+      <TableHead>Na Cidade</TableHead>
+      <TableHead>Saindo</TableHead>
+      <TableHead>Fora da Cidade</TableHead>
+    </TableRow>
+  </TableHeader>
+  <TableBody>
+    {trucks.map((truck) => (
+      <TableRow key={truck.id}>
+        <TableCell className="font-medium">{truck.plate}</TableCell>
+        <TableCell>
+          <Badge variant={getStatusVariant(truck.status)}>
+            {getStatusLabel(truck.status)}
+          </Badge>
+        </TableCell>
+        <TableCell>{formatDateTime(truck.last_seen)}</TableCell>
+        <TableCell>{formatDateTime(truck.status_timestamps?.entering)}</TableCell>
+        <TableCell>{formatDateTime(truck.status_timestamps?.in_city)}</TableCell>
+        <TableCell>{formatDateTime(truck.status_timestamps?.leaving)}</TableCell>
+        <TableCell>{formatDateTime(truck.status_timestamps?.outside)}</TableCell>
+      </TableRow>
+    ))}
+  </TableBody>
+</Table>

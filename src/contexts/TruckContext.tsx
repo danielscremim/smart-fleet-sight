@@ -116,6 +116,19 @@ export const TruckProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const updateTruckStatus = async (id: string, status: Truck['status']) => {
     try {
+      // Primeiro, obter o caminhão atual para verificar seu status
+      const currentTruck = trucks.find(truck => truck.id === id);
+      
+      // Se o caminhão já estiver com status "outside", não permitir atualização
+      if (currentTruck?.status === 'outside') {
+        toast({
+          title: 'Operação não permitida',
+          description: `O caminhão ${currentTruck.plate} já está fora da cidade. Use o leitor de placas para registrar uma nova entrada.`,
+          variant: 'destructive'
+        });
+        return currentTruck;
+      }
+      
       const updatedTruck = await truckService.updateTruckStatus(id, status);
       await refreshTrucks();
       toast({

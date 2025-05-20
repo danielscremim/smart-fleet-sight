@@ -64,6 +64,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Simular atraso de API
       await new Promise(resolve => setTimeout(resolve, 1000));
       
+      console.log("Tentando login com:", email);
+      console.log("Usuários registrados:", registeredUsers);
+      
       // Verificar se as credenciais correspondem a algum usuário registrado
       if (registeredUsers[email] && registeredUsers[email].password === password) {
         const userData = {
@@ -87,6 +90,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return Promise.reject(new Error("Credenciais inválidas"));
       }
     } catch (error) {
+      console.error("Erro completo no login:", error);
       toast({
         title: "Erro no login",
         description: "Ocorreu um erro durante o login",
@@ -99,87 +103,54 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const register = async (name: string, email: string, password: string) => {
+    setIsLoading(true);
     try {
-      console.log("Tentando registrar usuário:", { name, email });
-      setLoading(true);
+      // Simular atraso de API
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Adicione dados do usuário (nome) como metadados
-      const { error } = await supabase.auth.signUp({ 
-        email, 
-        password,
-        options: {
-          data: {
-            name: name
-          }
-        }
-      });
+      // Verificar se o email já está registrado
+      if (registeredUsers[email]) {
+        toast({
+          title: "Erro no registro",
+          description: "Este email já está em uso",
+          variant: "destructive"
+        });
+        return Promise.reject(new Error("Email já registrado"));
+      }
       
-      if (error) throw error;
+      // Registrar novo usuário
+      const updatedUsers = {
+        ...registeredUsers,
+        [email]: { name, password }
+      };
+      
+      setRegisteredUsers(updatedUsers);
       
       toast({
-        title: 'Registro realizado com sucesso',
-        description: 'Verifique seu e-mail para confirmar o cadastro.',
+        title: "Registro realizado com sucesso",
+        description: "Você já pode fazer login com suas credenciais",
       });
+      
+      return Promise.resolve();
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Erro ao registrar';
       toast({
-        title: 'Erro de registro',
-        description: errorMessage,
-        variant: 'destructive',
+        title: "Erro no registro",
+        description: "Ocorreu um erro durante o registro",
+        variant: "destructive"
       });
-      throw error;
+      return Promise.reject(error);
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
-  const logout = async () => {
-    try {
-      setLoading(true);
-      const { error } = await supabase.auth.signOut();
-      
-      if (error) throw error;
-      
-      toast({
-        title: 'Logout realizado',
-        description: 'Você foi desconectado com sucesso.',
-      });
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Erro ao fazer logout';
-      toast({
-        title: 'Erro',
-        description: errorMessage,
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const resetPassword = async (email: string) => {
-    try {
-      setLoading(true);
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth/reset-password`,
-      });
-      
-      if (error) throw error;
-      
-      toast({
-        title: 'E-mail enviado',
-        description: 'Verifique seu e-mail para redefinir sua senha.',
-      });
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Erro ao solicitar redefinição de senha';
-      toast({
-        title: 'Erro',
-        description: errorMessage,
-        variant: 'destructive',
-      });
-      throw error;
-    } finally {
-      setLoading(false);
-    }
+  const logout = () => {
+    localStorage.removeItem("user");
+    setUser(null);
+    toast({
+      title: "Logout realizado",
+      description: "Você foi desconectado com sucesso",
+    });
   };
 
   const forgotPassword = async (email: string) => {
@@ -188,16 +159,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Simular atraso de API
       await new Promise(resolve => setTimeout(resolve, 1000));
       
+      // Verificar se o email existe
+      if (!registeredUsers[email]) {
+        toast({
+          title: "Email não encontrado",
+          description: "Não há conta registrada com este email",
+          variant: "destructive"
+        });
+        return Promise.reject(new Error("Email não encontrado"));
+      }
+      
       toast({
         title: "Email enviado",
         description: "Instruções para recuperação de senha foram enviadas para o seu email.",
       });
+      
+      return Promise.resolve();
     } catch (error) {
       toast({
         title: "Erro",
         description: "Não foi possível enviar o email de recuperação",
         variant: "destructive"
       });
+      return Promise.reject(error);
     } finally {
       setIsLoading(false);
     }

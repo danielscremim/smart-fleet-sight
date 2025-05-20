@@ -15,6 +15,7 @@ import HomePage from "./pages/Inicio";
 import DashboardPage from "./pages/DashboardPage";
 import PlateReaderPage from "./pages/PlateReaderPage";
 import Inicio from "./pages/Inicio";
+import ApiDocs from './pages/ApiDocs';
 
 const queryClient = new QueryClient();
 
@@ -64,6 +65,7 @@ const App = () => (
 
               {/* Página não encontrada */}
               <Route path="*" element={<NotFound />} />
+              <Route path="/api-docs" element={<ApiDocs />} />
             </Routes>
           </BrowserRouter>
         </TruckProvider>

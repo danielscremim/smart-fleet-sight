@@ -8,7 +8,8 @@ import {
   Home, 
   BarChart, 
   Camera, 
-  LogOut 
+  LogOut,
+  FileText 
 } from "lucide-react";
 
 type LayoutProps = {
@@ -72,6 +73,19 @@ export function Layout({ children }: LayoutProps) {
               >
                 <Camera className="mr-3 h-5 w-5" />
                 Leitor de Placa
+              </Link>
+            </li>
+            <li>
+              <Link 
+                to="/api-docs" 
+                className={`flex items-center p-3 rounded-md transition-colors ${
+                  location.pathname === "/api-docs" 
+                    ? "bg-anpr-lightGray text-anpr-darkBlue"
+                    : "hover:bg-anpr-lightGray text-gray-600"
+                }`}
+              >
+                <FileText className="mr-3 h-5 w-5" />
+                Documentação da API
               </Link>
             </li>
           </ul>
