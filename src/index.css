@@ -95,6 +95,11 @@
     @apply bg-background text-foreground font-sans;
   }
 
+  /* Remover atributos da tag */
+  [inuse-id] {
+    outline: none !important;
+  }
+
   .card-hover {
     @apply transition-all duration-300 hover:shadow-lg hover:-translate-y-1;
   }

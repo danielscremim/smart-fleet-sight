@@ -18,7 +18,7 @@ export default function AuthPage() {
           <div>
             <div className="flex items-center gap-2">
               <Truck className="h-8 w-8 text-white" />
-              <h1 className="text-2xl font-bold text-white">SmartFleetSight</h1>
+              <h1 className="text-2xl font-bold text-white">Trafego Inteligente</h1>
             </div>
           </div>
           
@@ -44,7 +44,7 @@ export default function AuthPage() {
           </div>
           
           <div className="text-white/60 text-sm">
-            &copy; {new Date().getFullYear()} SmartFleetSight. Todos os direitos reservados.
+            &copy; {new Date().getFullYear()} Trafego Inteligente. Todos os direitos reservados.
           </div>
         </div>
       </div>

@@ -135,7 +135,7 @@ export default function Home() {
               Pronto para transformar a gestão da sua frota?
             </h2>
             <p className="text-xl text-gray-300 mb-10">
-              Junte-se a centenas de empresas que já otimizaram suas operações com o Smart Fleet Sight.
+              Junte-se a centenas de empresas que já otimizaram suas operações com o Tréfego Inteligente.
             </p>
             <Button 
               size="lg" 
@@ -154,7 +154,7 @@ export default function Home() {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="mb-6 md:mb-0">
-              <h2 className="text-2xl font-bold text-white">Smart Fleet Sight</h2>
+              <h2 className="text-2xl font-bold text-white">Tráfego Inteligente</h2>
               <p className="text-gray-400 mt-2">Monitoramento inteligente para sua frota</p>
             </div>
             <div className="flex space-x-6">
@@ -165,7 +165,7 @@ export default function Home() {
             </div>
           </div>
           <div className="mt-8 border-t border-slate-800 pt-8 text-center text-gray-400">
-            <p>© {new Date().getFullYear()} Smart Fleet Sight. Todos os direitos reservados.</p>
+            <p>© {new Date().getFullYear()} Tráfego Inteligente. Todos os direitos reservados.</p>
           </div>
         </div>
       </footer>

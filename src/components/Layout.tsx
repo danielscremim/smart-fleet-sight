@@ -30,7 +30,7 @@ export function Layout({ children }: LayoutProps) {
       <aside className="bg-white shadow-md w-64 flex-shrink-0 hidden md:flex flex-col">
         <div className="p-5 border-b">
           <h1 className="text-xl font-semibold text-anpr-darkBlue flex items-center gap-2">
-            <Truck /> SmartFleetSight
+            <Truck /> Trafego Inteligente
           </h1>
         </div>
         
@@ -110,7 +110,7 @@ export function Layout({ children }: LayoutProps) {
       <div className="flex flex-col w-full">
         <header className="bg-white shadow-sm p-4 flex md:hidden items-center justify-between">
           <h1 className="text-xl font-semibold text-anpr-darkBlue flex items-center gap-2">
-            <Truck /> SmartFleetSight
+            <Truck /> Trafego Inteligente
           </h1>
           
           <div className="flex items-center gap-2">
