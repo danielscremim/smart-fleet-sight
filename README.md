@@ -90,3 +90,7 @@ Siga estas etapas para configurar o projeto em sua máquina local:
 git clone https://github.com/danielscremim/trafego_inteligente.git
 cd trafego_inteligente
 ```
+2. Rode o repositório localmente:
+```bash
+npm run dev
+```
