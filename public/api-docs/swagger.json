@@ -1,11 +1,11 @@
 {
   "openapi": "3.0.0",
   "info": {
-    "title": "Smart Fleet Sight API",
+    "title": "Tráfego Inteligente API",
     "description": "API para gerenciamento de frota e reconhecimento automático de placas de caminhões",
     "version": "1.0.0",
     "contact": {
-      "email": "contato@smartfleetsight.com"
+      "email": "contato@smarttraffic.com"
     },
     "license": {
       "name": "MIT",
