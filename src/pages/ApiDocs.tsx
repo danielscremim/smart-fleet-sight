@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import SwaggerUI from 'swagger-ui-react';
 import 'swagger-ui-react/swagger-ui.css';
+import { useNavigate } from 'react-router-dom';
 
 export default function ApiDocs() {
   const [swaggerSpec, setSwaggerSpec] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     // Carregar o arquivo swagger.json
@@ -13,9 +15,21 @@ export default function ApiDocs() {
       .catch(error => console.error('Erro ao carregar a documentação da API:', error));
   }, []);
 
+  const handleGoBack = () => {
+    navigate('/');
+  };
+
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-6">Documentação da API</h1>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold">Documentação da API</h1>
+        <button 
+          onClick={handleGoBack}
+          className="bg-anpr-blue hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+        >
+          Voltar para a Home
+        </button>
+      </div>
       <div className="bg-white rounded-lg shadow-lg p-6">
         {swaggerSpec ? (
           <SwaggerUI spec={swaggerSpec} />

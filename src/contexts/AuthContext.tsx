@@ -1,6 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useToast } from '@/components/ui/use-toast';
+import { supabase } from "@/integrations/supabase/client";
 
 interface User {
   id: string;
@@ -61,39 +62,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      // Simular atraso de API
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
       
-      console.log("Tentando login com:", email);
-      console.log("Usuários registrados:", registeredUsers);
+      if (error) throw error;
       
-      // Verificar se as credenciais correspondem a algum usuário registrado
-      if (registeredUsers[email] && registeredUsers[email].password === password) {
-        const userData = {
-          id: email,
-          name: registeredUsers[email].name,
-          email: email
-        };
-        setUser(userData);
-        localStorage.setItem("user", JSON.stringify(userData));
-        toast({
-          title: "Login realizado com sucesso",
-          description: "Bem-vindo de volta!",
-        });
-        return Promise.resolve();
-      } else {
-        toast({
-          title: "Erro no login",
-          description: "Email ou senha incorretos",
-          variant: "destructive"
-        });
-        return Promise.reject(new Error("Credenciais inválidas"));
-      }
-    } catch (error) {
-      console.error("Erro completo no login:", error);
+      // Obter dados do usuário
+      const userData = {
+        id: data.user.id,
+        name: data.user.user_metadata.name || email.split('@')[0],
+        email: data.user.email,
+      };
+      
+      setUser(userData);
+      localStorage.setItem("user", JSON.stringify(userData));
+      
+      toast({
+        title: "Login realizado com sucesso",
+        description: "Bem-vindo de volta!",
+      });
+      
+      return Promise.resolve();
+    } catch (error: any) {
+      console.error("Erro no login:", error);
       toast({
         title: "Erro no login",
-        description: "Ocorreu um erro durante o login",
+        description: error.message || "Email ou senha incorretos",
         variant: "destructive"
       });
       return Promise.reject(error);
@@ -105,37 +101,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const register = async (name: string, email: string, password: string) => {
     setIsLoading(true);
     try {
-      // Simular atraso de API
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Verificar se o email já está registrado
-      if (registeredUsers[email]) {
-        toast({
-          title: "Erro no registro",
-          description: "Este email já está em uso",
-          variant: "destructive"
-        });
-        return Promise.reject(new Error("Email já registrado"));
-      }
-      
-      // Registrar novo usuário
-      const updatedUsers = {
-        ...registeredUsers,
-        [email]: { name, password }
-      };
-      
-      setRegisteredUsers(updatedUsers);
-      
-      toast({
-        title: "Registro realizado com sucesso",
-        description: "Você já pode fazer login com suas credenciais",
+      // Registrar usuário no Supabase
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name,
+          },
+        },
       });
       
+      if (error) throw error;
+      
+      // Verifica se o usuário foi criado com sucesso e já está confirmado
+      if (data?.user?.identities?.length > 0) {
+        toast({
+          title: "Registro realizado com sucesso",
+          description: "Sua conta foi criada com sucesso",
+        });
+      } else {
+        toast({
+          title: "Registro realizado com sucesso",
+          description: "Verifique seu email para confirmar o cadastro",
+        });
+      }
+      
       return Promise.resolve();
-    } catch (error) {
+    } catch (error: any) {
+      console.error("Erro no registro:", error);
       toast({
         title: "Erro no registro",
-        description: "Ocorreu um erro durante o registro",
+        description: error.message || "Ocorreu um erro durante o registro",
         variant: "destructive"
       });
       return Promise.reject(error);
