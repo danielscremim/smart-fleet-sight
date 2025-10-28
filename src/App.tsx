@@ -14,6 +14,7 @@ import AuthPage from "./pages/AuthPage";
 import HomePage from "./pages/Inicio";
 import DashboardPage from "./pages/DashboardPage";
 import PlateReaderPage from "./pages/PlateReaderPage";
+import RealTimePlateReader from "./pages/RealTimePlateReader";
 import Inicio from "./pages/Inicio";
 import ApiDocs from './pages/ApiDocs';
 
@@ -59,6 +60,14 @@ const App = () => (
                 <ProtectedRoute>
                   <Layout>
                     <PlateReaderPage />
+                  </Layout>
+                </ProtectedRoute>
+              } />
+
+              <Route path="/real-time-reader" element={
+                <ProtectedRoute>
+                  <Layout>
+                    <RealTimePlateReader />
                   </Layout>
                 </ProtectedRoute>
               } />

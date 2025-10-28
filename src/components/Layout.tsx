@@ -9,7 +9,8 @@ import {
   BarChart, 
   Camera, 
   LogOut,
-  FileText 
+  FileText,
+  Video 
 } from "lucide-react";
 
 type LayoutProps = {
@@ -73,6 +74,19 @@ export function Layout({ children }: LayoutProps) {
               >
                 <Camera className="mr-3 h-5 w-5" />
                 Leitor de Placa
+              </Link>
+            </li>
+            <li>
+              <Link 
+                to="/real-time-reader" 
+                className={`flex items-center p-3 rounded-md transition-colors ${
+                  location.pathname === "/real-time-reader" 
+                    ? "bg-anpr-lightGray text-anpr-darkBlue"
+                    : "hover:bg-anpr-lightGray text-gray-600"
+                }`}
+              >
+                <Video className="mr-3 h-5 w-5" />
+                Câmera Tempo Real
               </Link>
             </li>
             <li>

@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 
 const corsHeaders = {
@@ -6,11 +5,9 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// Token da API Plate Recognizer
-const API_KEY = "eb9967a6b9156d96bf06dbc8328bcc50db70fb06";
+const API_KEY = "f9969cdf396f66c8f9d2b7434afe5b6e145b5028";
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
@@ -18,7 +15,6 @@ serve(async (req) => {
   try {
     console.log("Recebendo requisição para processamento de placa");
     
-    // Verificar o conteúdo da requisição
     const contentType = req.headers.get('content-type');
     console.log(`Content-Type: ${contentType}`);
     
@@ -39,35 +35,24 @@ serve(async (req) => {
     
     console.log("Preparando imagem para envio à API Plate Recognizer");
     
-    // Extrair a parte base64 da string da imagem
     const base64Data = image.replace(/^data:image\/(png|jpeg|jpg);base64,/, '');
-    
-    // Converter base64 para Uint8Array (binário)
     const binaryData = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
     
     try {
       console.log("Criando FormData para envio à API");
       
-      // Criar um objeto FormData
       const formData = new FormData();
-      
-      // Criar um blob a partir dos dados binários
       const blob = new Blob([binaryData], { type: 'image/jpeg' });
       
-      // Adicionar a imagem ao FormData
       formData.append('upload', blob, 'plate.jpg');
-      
-      // Adicionar a região ao FormData
       formData.append('regions', 'br');
       
       console.log("Enviando requisição para API Plate Recognizer");
       
-      // Chamar a API Plate Recognizer para reconhecimento de placa
       const response = await fetch('https://api.platerecognizer.com/v1/plate-reader/', {
         method: 'POST',
         headers: {
           'Authorization': `Token ${API_KEY}`
-          // Não definimos Content-Type aqui, pois o navegador define automaticamente com o boundary correto
         },
         body: formData
       });
@@ -128,3 +113,5 @@ serve(async (req) => {
     );
   }
 })
+
+
