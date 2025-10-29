@@ -1,0 +1,25 @@
+{
+  "name": "rtsp-proxy-server",
+  "version": "1.0.0",
+  "description": "Servidor proxy para converter streams RTSP em WebSocket para navegadores",
+  "main": "rtsp-proxy-server.js",
+  "scripts": {
+    "start": "node rtsp-proxy-server.js",
+    "dev": "nodemon rtsp-proxy-server.js"
+  },
+  "keywords": [
+    "rtsp",
+    "websocket",
+    "ffmpeg",
+    "streaming",
+    "camera"
+  ],
+  "dependencies": {
+    "express": "^4.18.2",
+    "ws": "^8.14.2",
+    "cors": "^2.8.5"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}

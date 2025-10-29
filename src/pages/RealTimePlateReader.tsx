@@ -3,10 +3,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { Camera, Play, Square, Pause, RotateCcw, Settings } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Camera, Play, Square, Pause, RotateCcw, Settings, Video, Monitor } from 'lucide-react';
 import { useCameraPlateReader } from '@/hooks/use-camera-plate-reader';
 import { PlateDetectionList } from '@/components/plate-reader/PlateDetectionList';
 import { toast } from '@/components/ui/use-toast';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export default function RealTimePlateReader() {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -16,6 +19,8 @@ export default function RealTimePlateReader() {
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [selectedCamera, setSelectedCamera] = useState<string>('');
   const [availableCameras, setAvailableCameras] = useState<MediaDeviceInfo[]>([]);
+  const [cameraUrl, setCameraUrl] = useState<string>('');
+  const [cameraMode, setCameraMode] = useState<'local' | 'remote'>('local');
 
   const {
     isProcessing,
@@ -64,7 +69,7 @@ export default function RealTimePlateReader() {
     }
   };
 
-  // Iniciar câmera
+  // Iniciar câmera local
   const startCamera = async () => {
     try {
       setCameraError(null);
@@ -96,6 +101,51 @@ export default function RealTimePlateReader() {
     }
   };
 
+  // Iniciar câmera remota (RTSP, HTTP, etc.)
+  const startRemoteCamera = async () => {
+    try {
+      setCameraError(null);
+      
+      if (!cameraUrl.trim()) {
+        setCameraError('Por favor, insira o endereço da câmera.');
+        toast({
+          title: "Erro",
+          description: "Insira o endereço da câmera",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      if (videoRef.current) {
+        // Para câmeras IP/RTSP, usamos o elemento video diretamente
+        // Nota: Navegadores não suportam RTSP diretamente, seria necessário um servidor intermediário
+        // Por enquanto, vamos tentar com URLs HTTP diretas (MJPEG, HLS, etc.)
+        videoRef.current.src = cameraUrl;
+        videoRef.current.load();
+        
+        videoRef.current.onloadedmetadata = () => {
+          setIsStreaming(true);
+          toast({
+            title: "Câmera conectada",
+            description: "Stream remoto conectado com sucesso!",
+          });
+        };
+        
+        videoRef.current.onerror = () => {
+          setCameraError('Não foi possível conectar à câmera remota. Verifique o endereço e protocolo.');
+          toast({
+            title: "Erro de conexão",
+            description: "Não foi possível conectar à câmera remota.",
+            variant: "destructive"
+          });
+        };
+      }
+    } catch (err) {
+      console.error('Erro ao conectar à câmera remota:', err);
+      setCameraError('Erro ao conectar à câmera remota.');
+    }
+  };
+
   // Parar câmera
   const stopCamera = () => {
     if (isAutoCapture) {
@@ -109,6 +159,8 @@ export default function RealTimePlateReader() {
     
     if (videoRef.current) {
       videoRef.current.srcObject = null;
+      videoRef.current.src = '';
+      videoRef.current.load();
     }
     
     setIsStreaming(false);
@@ -211,23 +263,76 @@ export default function RealTimePlateReader() {
               </Alert>
             )}
             
-            {/* Seletor de Câmera */}
-            {availableCameras.length > 1 && (
-              <div className="flex items-center gap-2">
-                <Settings className="h-4 w-4" />
-                <select
-                  value={selectedCamera}
-                  onChange={(e) => switchCamera(e.target.value)}
-                  className="flex-1 p-2 border rounded"
-                  disabled={isStreaming}
-                >
-                  {availableCameras.map((camera, index) => (
-                    <option key={camera.deviceId} value={camera.deviceId}>
-                      {camera.label || `Câmera ${index + 1}`}
-                    </option>
-                  ))}
-                </select>
-              </div>
+            {/* Abas para escolher tipo de câmera */}
+            {!isStreaming && (
+              <Tabs value={cameraMode} onValueChange={(value) => setCameraMode(value as 'local' | 'remote')}>
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="local" className="flex items-center gap-2">
+                    <Video className="h-4 w-4" />
+                    Câmera Local
+                  </TabsTrigger>
+                  <TabsTrigger value="remote" className="flex items-center gap-2">
+                    <Monitor className="h-4 w-4" />
+                    Câmera IP/RTSP
+                  </TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="local" className="space-y-4">
+                  {/* Seletor de Câmera Local */}
+                  {availableCameras.length > 0 && (
+                    <div className="space-y-2">
+                      <Label htmlFor="camera-select">Selecione a câmera</Label>
+                      <div className="flex items-center gap-2">
+                        <Settings className="h-4 w-4" />
+                        <select
+                          id="camera-select"
+                          value={selectedCamera}
+                          onChange={(e) => setSelectedCamera(e.target.value)}
+                          className="flex-1 p-2 border rounded"
+                        >
+                          {availableCameras.map((camera, index) => (
+                            <option key={camera.deviceId} value={camera.deviceId}>
+                              {camera.label || `Câmera ${index + 1}`}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  )}
+                  
+                  <p className="text-sm text-gray-500">
+                    Use a câmera integrada do seu dispositivo ou webcam USB conectada.
+                  </p>
+                </TabsContent>
+                
+                <TabsContent value="remote" className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="camera-url">Endereço da Câmera</Label>
+                    <Input
+                      id="camera-url"
+                      type="text"
+                      placeholder="http://192.168.1.100:8080/video ou rtsp://..."
+                      value={cameraUrl}
+                      onChange={(e) => setCameraUrl(e.target.value)}
+                      className="font-mono text-sm"
+                    />
+                    <p className="text-xs text-gray-500">
+                      Formatos suportados: HTTP (MJPEG/HLS), RTSP (requer servidor intermediário)
+                    </p>
+                  </div>
+                  
+                  <Alert>
+                    <AlertDescription className="text-sm">
+                      <strong>Exemplos de URLs:</strong>
+                      <ul className="mt-2 space-y-1 text-xs">
+                        <li>• HTTP: http://192.168.1.100:8080/video.mjpg</li>
+                        <li>• RTSP: rtsp://usuario:senha@192.168.1.100:554/stream</li>
+                        <li>• HLS: http://192.168.1.100/stream.m3u8</li>
+                      </ul>
+                    </AlertDescription>
+                  </Alert>
+                </TabsContent>
+              </Tabs>
             )}
             
             {/* Vídeo */}
@@ -245,7 +350,7 @@ export default function RealTimePlateReader() {
                 <div className="flex items-center justify-center h-64 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300">
                   <div className="text-center">
                     <Camera className="h-12 w-12 mx-auto text-gray-400 mb-2" />
-                    <p className="text-gray-500">Clique em "Iniciar Câmera" para começar</p>
+                    <p className="text-gray-500">Configure e inicie a câmera acima</p>
                   </div>
                 </div>
               )}
@@ -263,7 +368,10 @@ export default function RealTimePlateReader() {
             {/* Controles */}
             <div className="flex gap-2 justify-center flex-wrap">
               {!isStreaming ? (
-                <Button onClick={startCamera} className="flex items-center gap-2">
+                <Button 
+                  onClick={cameraMode === 'local' ? startCamera : startRemoteCamera} 
+                  className="flex items-center gap-2"
+                >
                   <Play className="h-4 w-4" />
                   Iniciar Câmera
                 </Button>
